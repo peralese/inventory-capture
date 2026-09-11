@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{% if item %}Edit Item{% else %}Add Item{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if item %}Edit Item {{ item['item_id'] }}{% else %}Add Item{% endif %}</h1>
+
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<form class="form-grid" method="post"
+      action="{% if item %}/items/{{ item['item_id'] }}/edit{% else %}/items/new{% endif %}">
+  <label for="name">Name *</label>
+  <input type="text" id="name" name="name" required value="{{ item['name'] if item else '' }}">
+
+  <label for="category">Category</label>
+  <input type="text" id="category" name="category" value="{{ item['category'] if item else '' }}">
+
+  <label for="storage_location">Storage location</label>
+  <input type="text" id="storage_location" name="storage_location" value="{{ item['storage_location'] if item else '' }}">
+
+  <label for="availability_status">Availability status</label>
+  <select id="availability_status" name="availability_status">
+    {% set current_status = item['availability_status'] if item else 'In Stock' %}
+    {% for s in statuses %}
+    <option value="{{ s }}" {% if s == current_status %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+
+  <label for="condition">Condition</label>
+  <input type="text" id="condition" name="condition" value="{{ item['condition'] if item else '' }}">
+
+  <label for="photo_on_file">
+    <input type="checkbox" id="photo_on_file" name="photo_on_file" value="1"
+           {% if item and item['photo_on_file'] %}checked{% endif %}>
+    Photo on file
+  </label>
+
+  <label for="notes">Notes</label>
+  <textarea id="notes" name="notes" rows="3">{{ item['notes'] if item else '' }}</textarea>
+
+  <h2>Acquisition</h2>
+
+  <label for="acquired_date">Acquired date</label>
+  <input type="date" id="acquired_date" name="acquired_date" value="{{ item['acquired_date'] if item else '' }}">
+
+  <label for="acquired_from">Acquired from (source)</label>
+  <input type="text" id="acquired_from" name="acquired_from" value="{{ item['acquired_from'] if item else '' }}">
+
+  <label for="acquisition_cost">Acquisition cost</label>
+  <input type="number" step="0.01" id="acquisition_cost" name="acquisition_cost"
+         value="{{ item['acquisition_cost'] if item and item['acquisition_cost'] is not none else '' }}">
+
+  <h2>Listing</h2>
+
+  <label for="listed">
+    <input type="checkbox" id="listed" name="listed" value="1"
+           {% if item and item['listed'] %}checked{% endif %}>
+    Listed
+  </label>
+
+  <label for="listing_platform">Listing platform</label>
+  <input type="text" id="listing_platform" name="listing_platform" value="{{ item['listing_platform'] if item else '' }}">
+
+  <label for="listing_price">Listing price</label>
+  <input type="number" step="0.01" id="listing_price" name="listing_price"
+         value="{{ item['listing_price'] if item and item['listing_price'] is not none else '' }}">
+
+  <label for="listing_date">Listing date</label>
+  <input type="date" id="listing_date" name="listing_date" value="{{ item['listing_date'] if item else '' }}">
+
+  <h2>Sale</h2>
+
+  <label for="sold_date">Sold date</label>
+  <input type="date" id="sold_date" name="sold_date" value="{{ item['sold_date'] if item else '' }}">
+
+  <label for="sold_price">Sold price</label>
+  <input type="number" step="0.01" id="sold_price" name="sold_price"
+         value="{{ item['sold_price'] if item and item['sold_price'] is not none else '' }}">
+
+  <label for="fees_shipping_cost">Fees / shipping cost</label>
+  <input type="number" step="0.01" id="fees_shipping_cost" name="fees_shipping_cost"
+         value="{{ item['fees_shipping_cost'] if item and item['fees_shipping_cost'] is not none else '' }}">
+
+  <label for="net_profit">Net profit</label>
+  <input type="number" step="0.01" id="net_profit" name="net_profit"
+         value="{{ item['net_profit'] if item and item['net_profit'] is not none else '' }}">
+
+  <label for="final_disposition">Final disposition</label>
+  <input type="text" id="final_disposition" name="final_disposition" value="{{ item['final_disposition'] if item else '' }}">
+
+  <div class="actions">
+    <button class="btn" type="submit">{% if item %}Save changes{% else %}Add item{% endif %}</button>
+    <a href="/">Cancel</a>
+  </div>
+</form>
+{% endblock %}

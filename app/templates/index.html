@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Inventory{% endblock %}
+{% block content %}
+<h1>Inventory</h1>
+
+<form class="filters" method="get" action="/">
+  <label>Status:
+    <select name="availability_status" onchange="this.form.submit()">
+      <option value="">All</option>
+      {% for s in statuses %}
+      <option value="{{ s }}" {% if s == selected_status %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Location:
+    <select name="storage_location" onchange="this.form.submit()">
+      <option value="">All</option>
+      {% for loc in locations %}
+      <option value="{{ loc }}" {% if loc == selected_location %}selected{% endif %}>{{ loc }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% if selected_status or selected_location %}
+  <a href="/">Clear filters</a>
+  {% endif %}
+</form>
+
+<datalist id="locations-datalist">
+  {% for loc in locations %}
+  <option value="{{ loc }}">
+  {% endfor %}
+</datalist>
+
+<table>
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Category</th>
+      <th>Location</th>
+      <th>Status</th>
+      <th>Condition</th>
+      <th>Photo</th>
+      <th>Notes</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr {% if request.query_params.get('highlight') == item['item_id'] %}class="highlight"{% endif %}>
+      <td>{{ item['item_id'] }}</td>
+      <td>{{ item['name'] }}</td>
+      <td>{{ item['category'] or '' }}</td>
+      <td>
+        <form class="inline" method="post" action="/items/{{ item['item_id'] }}/quick-update">
+          <input type="hidden" name="return_status" value="{{ selected_status }}">
+          <input type="hidden" name="return_location" value="{{ selected_location }}">
+          <input class="quick" type="text" name="storage_location" list="locations-datalist"
+                 value="{{ item['storage_location'] or '' }}" onchange="this.form.submit()" size="12">
+        </form>
+      </td>
+      <td>
+        <form class="inline" method="post" action="/items/{{ item['item_id'] }}/quick-update">
+          <input type="hidden" name="return_status" value="{{ selected_status }}">
+          <input type="hidden" name="return_location" value="{{ selected_location }}">
+          <select class="quick" name="availability_status" onchange="this.form.submit()">
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if s == item['availability_status'] %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </td>
+      <td>{{ item['condition'] or '' }}</td>
+      <td>{{ 'Yes' if item['photo_on_file'] else 'No' }}</td>
+      <td>{{ item['notes'] or '' }}</td>
+      <td><a href="/items/{{ item['item_id'] }}/edit">Edit</a></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="9">No items found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
