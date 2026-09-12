@@ -213,3 +213,8 @@ def quick_update_item(conn: sqlite3.Connection, item_id: str, availability_statu
 def item_id_exists(conn: sqlite3.Connection, item_id: str) -> bool:
     row = conn.execute("SELECT 1 FROM items WHERE item_id = ?", (item_id,)).fetchone()
     return row is not None
+
+
+def delete_item(conn: sqlite3.Connection, item_id: str):
+    conn.execute("DELETE FROM items WHERE item_id = ?", (item_id,))
+    conn.commit()

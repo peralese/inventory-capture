@@ -10,6 +10,7 @@ __pycache__/
 *.db-wal
 *.db-shm
 /antiques_inventory.xlsx
+/import/
 
 # Local settings and secrets
 .env

@@ -89,6 +89,9 @@
   <div class="actions">
     <button class="btn" type="submit">{% if item %}Save changes{% else %}Add item{% endif %}</button>
     <a href="/">Cancel</a>
+    {% if item and item['item_id'] %}
+    <a class="danger-link" href="/items/{{ item['item_id'] }}/delete">Delete item</a>
+    {% endif %}
   </div>
 </form>
 {% endblock %}

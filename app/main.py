@@ -248,3 +248,27 @@ def quick_update(
     return RedirectResponse(
         url=f"/{_filter_query(return_status, return_location)}", status_code=303
     )
+
+
+@app.get("/items/{item_id}/delete")
+def delete_item_form(request: Request, item_id: str):
+    conn = db.get_connection()
+    try:
+        item = db.get_item(conn, item_id)
+    finally:
+        conn.close()
+    if item is None:
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse(
+        "delete_item.html", {"request": request, "item": item}
+    )
+
+
+@app.post("/items/{item_id}/delete")
+def delete_item(item_id: str):
+    conn = db.get_connection()
+    try:
+        db.delete_item(conn, item_id)
+    finally:
+        conn.close()
+    return RedirectResponse(url="/", status_code=303)

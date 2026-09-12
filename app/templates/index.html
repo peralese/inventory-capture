@@ -73,7 +73,10 @@
       <td>{{ item['condition'] or '' }}</td>
       <td>{{ 'Yes' if item['photo_on_file'] else 'No' }}</td>
       <td>{{ item['notes'] or '' }}</td>
-      <td><a href="/items/{{ item['item_id'] }}/edit">Edit</a></td>
+      <td>
+        <a href="/items/{{ item['item_id'] }}/edit">Edit</a>
+        <a class="danger-link" href="/items/{{ item['item_id'] }}/delete">Delete</a>
+      </td>
     </tr>
     {% else %}
     <tr><td colspan="9">No items found.</td></tr>

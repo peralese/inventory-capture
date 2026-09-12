@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Delete Item{% endblock %}
+{% block content %}
+<h1>Delete item?</h1>
+<p>You are about to permanently delete <strong>{{ item['name'] }}</strong> (ID {{ item['item_id'] }}).</p>
+<p>This cannot be undone.</p>
+<form method="post" action="/items/{{ item['item_id'] }}/delete">
+  <button class="btn btn-danger" type="submit">Delete item permanently</button>
+  <a href="/">Cancel</a>
+</form>
+{% endblock %}
