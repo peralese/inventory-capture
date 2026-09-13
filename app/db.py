@@ -8,7 +8,11 @@ ALLOWED_STATUSES = ["In Stock", "Reserved", "Listed", "Sold", "Kept"]
 # Acquisition/listing/sale fields. Originally out of scope for this app (they
 # belong to the other Collectibles Suite tools), added back in at the user's
 # request once a single real spreadsheet turned out to combine both.
+QUANTITY_DEFAULTS = {"quantity_on_hand": 1, "quantity_listed": 0, "quantity_sold": 0}
+
 EXTRA_COLUMNS = [
+    *[(field, f"INTEGER NOT NULL DEFAULT {default} CHECK(typeof({field}) = 'integer' AND {field} >= 0)")
+      for field, default in QUANTITY_DEFAULTS.items()],
     ("acquired_date", "TEXT"),
     ("acquired_from", "TEXT"),
     ("acquisition_cost", "REAL"),
@@ -70,6 +74,12 @@ def _migrate(conn: sqlite3.Connection):
     for col_name, col_type in EXTRA_COLUMNS:
         if col_name not in existing:
             conn.execute(f"ALTER TABLE items ADD COLUMN {col_name} {col_type}")
+    if "quantity_on_hand" not in existing:
+        conn.execute("UPDATE items SET quantity_on_hand = CASE WHEN availability_status = 'Sold' THEN 0 ELSE 1 END")
+    if "quantity_listed" not in existing:
+        conn.execute("UPDATE items SET quantity_listed = CASE WHEN availability_status != 'Sold' AND (listed = 1 OR availability_status = 'Listed') THEN 1 ELSE 0 END")
+    if "quantity_sold" not in existing:
+        conn.execute("UPDATE items SET quantity_sold = CASE WHEN availability_status = 'Sold' THEN 1 ELSE 0 END")
     conn.commit()
 
 
@@ -125,10 +135,12 @@ def distinct_storage_locations(conn: sqlite3.Connection):
 
 
 def _extra_values(data: dict):
-    """Pull the 12 acquisition/listing/sale fields out of `data` in column order."""
+    """Pull additional fields out of data in column order, preserving zero counts."""
     values = []
     for col_name, _ in EXTRA_COLUMNS:
-        if col_name in BOOL_EXTRA_FIELDS:
+        if col_name in QUANTITY_DEFAULTS:
+            values.append(data.get(col_name, QUANTITY_DEFAULTS[col_name]))
+        elif col_name in BOOL_EXTRA_FIELDS:
             values.append(1 if data.get(col_name) else 0)
         else:
             values.append(data.get(col_name) or None)

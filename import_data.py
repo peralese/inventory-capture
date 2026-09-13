@@ -36,6 +36,7 @@ TRUTHY = {"1", "true", "yes", "y", "t"}
 # canonical field -> list of header spellings that should map to it (each
 # entry is compared after _clean() normalizes both sides)
 FIELD_ALIASES = {
+    **{field: [field, field.replace("_", " ")] for field in db.QUANTITY_DEFAULTS},
     "item_id": ["item_id", "item id", "id"],
     "name": ["name", "item_name", "item name description", "item name", "description"],
     "category": ["category"],
@@ -163,6 +164,7 @@ def main():
     skipped_duplicate_id = []
     status_warnings = []
     numeric_warnings = []
+    quantity_warnings = []
 
     try:
         for row in rows:
@@ -189,6 +191,22 @@ def main():
 
             row = _parse_numeric_fields(row, numeric_warnings, label)
 
+            defaults = {
+                "quantity_on_hand": 0 if status == "Sold" else 1,
+                "quantity_listed": 1 if status != "Sold" and (row["listed"] or status == "Listed") else 0,
+                "quantity_sold": 1 if status == "Sold" else 0,
+            }
+            try:
+                for field, default in defaults.items():
+                    row[field] = int(row[field]) if row[field] != "" else default
+                    if row[field] < 0:
+                        raise ValueError
+                if row["quantity_listed"] > row["quantity_on_hand"]:
+                    raise ValueError
+            except ValueError:
+                quantity_warnings.append(label)
+                continue
+
             if args.dry_run:
                 imported += 1
                 continue
@@ -212,10 +230,7 @@ def main():
                         row["condition"] or None,
                         1 if row["photo_on_file"] else 0,
                         row["notes"] or None,
-                        *[
-                            (1 if row[c] else 0) if c in BOOL_FIELDS else (row[c] or None)
-                            for c, _ in db.EXTRA_COLUMNS
-                        ],
+                        *db._extra_values(row),
                     ),
                 )
             else:
@@ -239,6 +254,8 @@ def main():
         print(f"Rows with unparseable numeric values (left blank): {len(numeric_warnings)}")
         for label, field, raw in numeric_warnings:
             print(f"  - {label}: {field} = {raw!r}")
+    if quantity_warnings:
+        print(f"Skipped (invalid quantities; use nonnegative whole numbers and listed <= on hand): {quantity_warnings}")
     if args.dry_run:
         print("(dry run — no rows written)")
 

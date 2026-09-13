@@ -39,6 +39,9 @@
       <th>Category</th>
       <th>Location</th>
       <th>Status</th>
+      <th>On hand</th>
+      <th>Listed</th>
+      <th>Sold</th>
       <th>Condition</th>
       <th>Photo</th>
       <th>Notes</th>
@@ -70,6 +73,9 @@
           </select>
         </form>
       </td>
+      <td>{{ item['quantity_on_hand'] }}</td>
+      <td>{{ item['quantity_listed'] }}</td>
+      <td>{{ item['quantity_sold'] }}</td>
       <td>{{ item['condition'] or '' }}</td>
       <td>{{ 'Yes' if item['photo_on_file'] else 'No' }}</td>
       <td>{{ item['notes'] or '' }}</td>
@@ -79,7 +85,7 @@
       </td>
     </tr>
     {% else %}
-    <tr><td colspan="9">No items found.</td></tr>
+    <tr><td colspan="12">No items found.</td></tr>
     {% endfor %}
   </tbody>
 </table>

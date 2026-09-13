@@ -42,6 +42,7 @@ Then run the startup command above. Dependency versions are currently unpinned i
 ## Using the app
 
 - Add and edit inventory items. New items receive sequential IDs such as `0001`.
+- Track quantity on hand (all unsold copies, including listed copies), quantity currently listed, and total quantity sold. Edit counts manually as copies are listed or sold; listed cannot exceed on hand. Status and the Listed checkbox remain independent summary fields.
 - Filter inventory by availability status and storage location.
 - Update status and location directly from the inventory list.
 - Record category, condition, notes, and whether a photo is on file.
@@ -96,3 +97,5 @@ Existing item IDs are preserved, with numeric IDs padded to at least four digits
 | `antiques_inventory.xlsx` | Existing spreadsheet import source |
 | `sample_data/` | Example import files |
 | `inventory-capture-app-prompt.md` | Original build brief; some features have since expanded |
+
+Quantity columns are also supported in spreadsheet imports. Missing counts default to one on hand (zero for Sold), one listed for unsold Listed records, and one sold for Sold records. Existing records receive these same defaults once at startup. Review inferred counts for records representing multiple copies. Invalid import quantities cause the row to be skipped and reported. Listing and sale price/date fields still hold one set of details per inventory record, not a history of individual listings or sales.

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}{% if item %}Edit Item{% else %}Add Item{% endif %}{% endblock %}
+{% block title %}{% if item and item['item_id'] %}Edit Item{% else %}Add Item{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if item %}Edit Item {{ item['item_id'] }}{% else %}Add Item{% endif %}</h1>
+<h1>{% if item and item['item_id'] %}Edit Item {{ item['item_id'] }}{% else %}Add Item{% endif %}</h1>
 
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
 <form class="form-grid" method="post"
-      action="{% if item %}/items/{{ item['item_id'] }}/edit{% else %}/items/new{% endif %}">
+      action="{% if item and item['item_id'] %}/items/{{ item['item_id'] }}/edit{% else %}/items/new{% endif %}">
   <label for="name">Name *</label>
   <input type="text" id="name" name="name" required value="{{ item['name'] if item else '' }}">
 
@@ -23,6 +23,17 @@
     <option value="{{ s }}" {% if s == current_status %}selected{% endif %}>{{ s }}</option>
     {% endfor %}
   </select>
+
+  <h2>Quantities</h2>
+  <p>On hand includes all unsold copies, including those listed. Listed is the number currently for sale; sold is the total sold. Update counts manually when listing or selling copies. Status and the Listed checkbox are separate summary fields.</p>
+  <label for="quantity_on_hand">Quantity on hand</label>
+  <input type="number" min="0" step="1" required id="quantity_on_hand" name="quantity_on_hand" value="{{ item['quantity_on_hand'] if item else 1 }}">
+
+  <label for="quantity_listed">Quantity listed</label>
+  <input type="number" min="0" step="1" required id="quantity_listed" name="quantity_listed" value="{{ item['quantity_listed'] if item else 0 }}">
+
+  <label for="quantity_sold">Quantity sold</label>
+  <input type="number" min="0" step="1" required id="quantity_sold" name="quantity_sold" value="{{ item['quantity_sold'] if item else 0 }}">
 
   <label for="condition">Condition</label>
   <input type="text" id="condition" name="condition" value="{{ item['condition'] if item else '' }}">
@@ -87,7 +98,7 @@
   <input type="text" id="final_disposition" name="final_disposition" value="{{ item['final_disposition'] if item else '' }}">
 
   <div class="actions">
-    <button class="btn" type="submit">{% if item %}Save changes{% else %}Add item{% endif %}</button>
+    <button class="btn" type="submit">{% if item and item['item_id'] %}Save changes{% else %}Add item{% endif %}</button>
     <a href="/">Cancel</a>
     {% if item and item['item_id'] %}
     <a class="danger-link" href="/items/{{ item['item_id'] }}/delete">Delete item</a>

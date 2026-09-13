@@ -39,6 +39,7 @@ def _build_item_data(
     name, category, storage_location, availability_status, condition, photo_on_file, notes,
     acquired_date, acquired_from, acquisition_cost, listed, listing_platform, listing_price,
     listing_date, sold_date, sold_price, fees_shipping_cost, net_profit, final_disposition,
+    quantity_on_hand="1", quantity_listed="0", quantity_sold="0",
 ):
     errors = []
     if availability_status not in db.ALLOWED_STATUSES:
@@ -65,6 +66,18 @@ def _build_item_data(
         "net_profit": _parse_float_field(net_profit, "Net Profit", errors),
         "final_disposition": final_disposition,
     }
+    for field, raw in (("quantity_on_hand", quantity_on_hand),
+                       ("quantity_listed", quantity_listed), ("quantity_sold", quantity_sold)):
+        try:
+            value = int(raw)
+            if value < 0:
+                raise ValueError
+            data[field] = value
+        except (ValueError, TypeError):
+            data[field] = raw
+            errors.append(f"{field.replace('_', ' ').capitalize()} must be a nonnegative whole number.")
+    if not errors and data["quantity_listed"] > data["quantity_on_hand"]:
+        errors.append("Quantity listed cannot exceed quantity on hand.")
     error = "; ".join(errors) if errors else None
     return data, error
 
@@ -125,6 +138,9 @@ def create_item(
     fees_shipping_cost: str = Form(""),
     net_profit: str = Form(""),
     final_disposition: str = Form(""),
+    quantity_on_hand: str = Form("1"),
+    quantity_listed: str = Form("0"),
+    quantity_sold: str = Form("0"),
 ):
     data, error = _build_item_data(
         name=name, category=category, storage_location=storage_location,
@@ -136,6 +152,8 @@ def create_item(
         listing_date=listing_date, sold_date=sold_date, sold_price=sold_price,
         fees_shipping_cost=fees_shipping_cost, net_profit=net_profit,
         final_disposition=final_disposition,
+        quantity_on_hand=quantity_on_hand, quantity_listed=quantity_listed,
+        quantity_sold=quantity_sold,
     )
     if error:
         return templates.TemplateResponse(
@@ -195,6 +213,9 @@ def update_item(
     fees_shipping_cost: str = Form(""),
     net_profit: str = Form(""),
     final_disposition: str = Form(""),
+    quantity_on_hand: str = Form("1"),
+    quantity_listed: str = Form("0"),
+    quantity_sold: str = Form("0"),
 ):
     data, error = _build_item_data(
         name=name, category=category, storage_location=storage_location,
@@ -206,6 +227,8 @@ def update_item(
         listing_date=listing_date, sold_date=sold_date, sold_price=sold_price,
         fees_shipping_cost=fees_shipping_cost, net_profit=net_profit,
         final_disposition=final_disposition,
+        quantity_on_hand=quantity_on_hand, quantity_listed=quantity_listed,
+        quantity_sold=quantity_sold,
     )
     if error:
         data["item_id"] = item_id
