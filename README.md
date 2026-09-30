@@ -8,10 +8,10 @@ On the remote machine, open Terminal (or connect over SSH) and run:
 
 ```sh
 cd /Users/erickperales/Projects/inventory-capture
-.venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+.venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 ```
 
-On your other computer, open **http://REMOTE_MACHINE_IP:8000**, replacing `REMOTE_MACHINE_IP` with the remote machine's LAN or VPN IP address. For example, if its IP is `192.168.1.50`, open **http://192.168.1.50:8000**.
+On your other computer, open **http://REMOTE_MACHINE_IP:8001**, replacing `REMOTE_MACHINE_IP` with the remote machine's LAN or VPN IP address. For example, if its IP is `192.168.1.50`, open **http://192.168.1.50:8001**.
 
 `0.0.0.0` makes the server listen on all network interfaces; use the machine's actual IP address in your browser. To find it, check the remote machine's network settings. On macOS, run `ipconfig getifaddr en0` for the common primary interface (if blank, check the active interface in System Settings → Network). On Linux, run `hostname -I` and choose the address reachable from your computer.
 
@@ -24,8 +24,8 @@ The command uses the project's existing virtual environment directly, so activat
 ### If startup fails
 
 - **Missing `.venv/bin/python` or missing packages:** follow the setup instructions below.
-- **Address already in use:** check whether `http://REMOTE_MACHINE_IP:8000` already opens the app. Use `lsof -nP -iTCP:8000 -sTCP:LISTEN` to identify the process using that port. Stop it from its original Terminal if appropriate, or run this app with `--port 8001` and open `http://REMOTE_MACHINE_IP:8001` instead.
-- **Cannot connect from another computer:** confirm both machines can reach each other over the LAN or VPN, the server was started with `--host 0.0.0.0`, and the remote machine's firewall allows inbound TCP port 8000 from your network.
+- **Address already in use:** check whether `http://REMOTE_MACHINE_IP:8001` already opens the app. Use `lsof -nP -iTCP:8001 -sTCP:LISTEN` to identify the process using that port. Stop it from its original Terminal if appropriate, or run this app with `--port 8002` and open `http://REMOTE_MACHINE_IP:8002` instead.
+- **Cannot connect from another computer:** confirm both machines can reach each other over the LAN or VPN, the server was started with `--host 0.0.0.0`, and the remote machine's firewall allows inbound TCP port 8001 from your network.
 - **Could not import module `app.main`:** make sure Terminal is in the project directory using the `cd` command above.
 
 ## Setup on a new machine or rebuild the environment
@@ -48,7 +48,7 @@ Then run the startup command above. Dependency versions are currently unpinned i
 - Record category, condition, notes, and whether a photo is on file.
 - Record acquisition, listing, and sale details, including costs, prices, fees, and net profit.
 
-Availability statuses are **In Stock**, **Reserved**, **Listed**, **Sold**, and **Kept**. The photo field is a checkbox; the app does not upload or store photos. There is no login; anyone who can reach the app can view and edit inventory. Use it on a trusted LAN or private VPN, and keep port 8000 off the public internet.
+Availability statuses are **In Stock**, **Reserved**, **Listed**, **Sold**, and **Kept**. The photo field is a checkbox; the app does not upload or store photos. There is no login; anyone who can reach the app can view and edit inventory. Use it on a trusted LAN or private VPN, and keep port 8001 off the public internet.
 
 ## Data and backups
 
