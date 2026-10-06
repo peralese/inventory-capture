@@ -108,17 +108,56 @@ def next_item_id(conn: sqlite3.Connection) -> str:
     return f"{max_num + 1:04d}"
 
 
-def list_items(conn: sqlite3.Connection, availability_status: str = "", storage_location: str = ""):
-    query = "SELECT * FROM items WHERE 1=1"
+SEARCH_FIELDS = ["item_id", "name", "category", "storage_location", "notes"]
+
+
+def _filter_clause(availability_status: str = "", storage_location: str = "", search: str = ""):
+    """Build the WHERE clause shared by list_items, count_items, and item_position.
+
+    Each whitespace-separated search word must appear (case-insensitively) in
+    at least one of SEARCH_FIELDS, so "blue vase" matches "Vase, cobalt blue".
+    """
+    clause = " WHERE 1=1"
     params = []
     if availability_status:
-        query += " AND availability_status = ?"
+        clause += " AND availability_status = ?"
         params.append(availability_status)
     if storage_location:
-        query += " AND storage_location = ?"
+        clause += " AND storage_location = ?"
         params.append(storage_location)
-    query += " ORDER BY item_id"
+    for word in (search or "").split():
+        pattern = "%" + word.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        clause += " AND (" + " OR ".join(
+            f"COALESCE({field}, '') LIKE ? ESCAPE '\\'" for field in SEARCH_FIELDS
+        ) + ")"
+        params.extend([pattern] * len(SEARCH_FIELDS))
+    return clause, params
+
+
+def list_items(conn: sqlite3.Connection, availability_status: str = "", storage_location: str = "",
+               search: str = "", limit: int = None, offset: int = 0):
+    clause, params = _filter_clause(availability_status, storage_location, search)
+    query = "SELECT * FROM items" + clause + " ORDER BY item_id"
+    if limit is not None:
+        query += " LIMIT ? OFFSET ?"
+        params += [limit, offset]
     return conn.execute(query, params).fetchall()
+
+
+def count_items(conn: sqlite3.Connection, availability_status: str = "", storage_location: str = "",
+                search: str = "") -> int:
+    clause, params = _filter_clause(availability_status, storage_location, search)
+    return conn.execute("SELECT COUNT(*) FROM items" + clause, params).fetchone()[0]
+
+
+def item_position(conn: sqlite3.Connection, item_id: str, availability_status: str = "",
+                  storage_location: str = "", search: str = ""):
+    """Zero-based index of item_id within the filtered list, or None if it isn't in it."""
+    clause, params = _filter_clause(availability_status, storage_location, search)
+    if conn.execute("SELECT 1 FROM items" + clause + " AND item_id = ?", params + [item_id]).fetchone() is None:
+        return None
+    return conn.execute("SELECT COUNT(*) FROM items" + clause + " AND item_id < ?",
+                        params + [item_id]).fetchone()[0]
 
 
 def get_item(conn: sqlite3.Connection, item_id: str):

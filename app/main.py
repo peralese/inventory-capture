@@ -1,4 +1,6 @@
+import math
 from pathlib import Path
+from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import RedirectResponse
@@ -14,13 +16,28 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 db.init_db()
 
 
-def _filter_query(availability_status: str, storage_location: str) -> str:
-    params = []
-    if availability_status:
-        params.append(f"availability_status={availability_status}")
-    if storage_location:
-        params.append(f"storage_location={storage_location}")
-    return ("?" + "&".join(params)) if params else ""
+PER_PAGE_OPTIONS = [25, 50, 100]
+DEFAULT_PER_PAGE = 50
+
+
+def _filter_query(availability_status: str = "", storage_location: str = "", q: str = "",
+                  page: int = 1, per_page: int = DEFAULT_PER_PAGE) -> str:
+    params = {
+        "availability_status": availability_status,
+        "storage_location": storage_location,
+        "q": q,
+        "page": page if page > 1 else "",
+        "per_page": per_page if per_page != DEFAULT_PER_PAGE else "",
+    }
+    params = {k: v for k, v in params.items() if v}
+    return ("?" + urlencode(params)) if params else ""
+
+
+def _int_param(raw, default: int) -> int:
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return default
 
 
 def _parse_float_field(raw: str, label: str, errors: list):
@@ -83,13 +100,40 @@ def _build_item_data(
 
 
 @app.get("/")
-def list_view(request: Request, availability_status: str = "", storage_location: str = ""):
+def list_view(
+    request: Request,
+    availability_status: str = "",
+    storage_location: str = "",
+    q: str = "",
+    page: str = "",
+    per_page: str = "",
+    highlight: str = "",
+):
+    q = q.strip()
+    per_page = _int_param(per_page, DEFAULT_PER_PAGE)
+    if per_page not in PER_PAGE_OPTIONS:
+        per_page = DEFAULT_PER_PAGE
+    filters = dict(availability_status=availability_status, storage_location=storage_location, search=q)
+
     conn = db.get_connection()
     try:
-        items = db.list_items(conn, availability_status, storage_location)
+        total = db.count_items(conn, **filters)
+        page_count = max(1, math.ceil(total / per_page))
+        if not page and highlight:
+            # Open on the page holding a just-saved item rather than page 1.
+            position = db.item_position(conn, highlight, **filters)
+            page_num = position // per_page + 1 if position is not None else 1
+        else:
+            page_num = _int_param(page, 1)
+        page_num = min(max(page_num, 1), page_count)
+        items = db.list_items(conn, **filters, limit=per_page, offset=(page_num - 1) * per_page)
         locations = db.distinct_storage_locations(conn)
     finally:
         conn.close()
+
+    def page_url(n):
+        return "/" + _filter_query(availability_status, storage_location, q, n, per_page)
+
     return templates.TemplateResponse(
         "index.html",
         {
@@ -99,6 +143,17 @@ def list_view(request: Request, availability_status: str = "", storage_location:
             "statuses": db.ALLOWED_STATUSES,
             "selected_status": availability_status,
             "selected_location": storage_location,
+            "q": q,
+            "page": page_num,
+            "page_count": page_count,
+            "per_page": per_page,
+            "per_page_options": PER_PAGE_OPTIONS,
+            "total": total,
+            "first_shown": (page_num - 1) * per_page + 1 if total else 0,
+            "last_shown": min(page_num * per_page, total),
+            "page_url": page_url,
+            "clear_url": "/" + _filter_query(per_page=per_page),
+            "highlight": highlight,
         },
     )
 
@@ -253,11 +308,16 @@ def quick_update(
     storage_location: str = Form(None),
     return_status: str = Form(""),
     return_location: str = Form(""),
+    return_q: str = Form(""),
+    return_page: str = Form(""),
+    return_per_page: str = Form(""),
 ):
+    return_url = "/" + _filter_query(
+        return_status, return_location, return_q,
+        _int_param(return_page, 1), _int_param(return_per_page, DEFAULT_PER_PAGE),
+    )
     if availability_status is not None and availability_status not in db.ALLOWED_STATUSES:
-        return RedirectResponse(
-            url=f"/{_filter_query(return_status, return_location)}", status_code=303
-        )
+        return RedirectResponse(url=return_url, status_code=303)
     conn = db.get_connection()
     try:
         db.quick_update_item(
@@ -268,9 +328,7 @@ def quick_update(
         )
     finally:
         conn.close()
-    return RedirectResponse(
-        url=f"/{_filter_query(return_status, return_location)}", status_code=303
-    )
+    return RedirectResponse(url=return_url, status_code=303)
 
 
 @app.get("/items/{item_id}/delete")

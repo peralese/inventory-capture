@@ -3,7 +3,25 @@
 {% block content %}
 <h1>Inventory</h1>
 
+{% macro pager() %}
+{% if page_count > 1 %}
+<nav class="pager" aria-label="Pages">
+  {% if page > 1 %}<a href="{{ page_url(page - 1) }}">&larr; Prev</a>{% else %}<span class="disabled">&larr; Prev</span>{% endif %}
+  {% for n in range(1, page_count + 1) %}
+    {% if n == 1 or n == page_count or (n - page)|abs <= 2 %}
+      {% if n == page %}<strong>{{ n }}</strong>{% else %}<a href="{{ page_url(n) }}">{{ n }}</a>{% endif %}
+    {% elif (n - page)|abs == 3 %}<span>&hellip;</span>{% endif %}
+  {% endfor %}
+  {% if page < page_count %}<a href="{{ page_url(page + 1) }}">Next &rarr;</a>{% else %}<span class="disabled">Next &rarr;</span>{% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
 <form class="filters" method="get" action="/">
+  <label>Search:
+    <input type="search" name="q" value="{{ q }}" placeholder="ID, name, category, location, notes" size="32">
+  </label>
+  <button type="submit">Search</button>
   <label>Status:
     <select name="availability_status" onchange="this.form.submit()">
       <option value="">All</option>
@@ -20,10 +38,22 @@
       {% endfor %}
     </select>
   </label>
-  {% if selected_status or selected_location %}
-  <a href="/">Clear filters</a>
+  <label>Per page:
+    <select name="per_page" onchange="this.form.submit()">
+      {% for n in per_page_options %}
+      <option value="{{ n }}" {% if n == per_page %}selected{% endif %}>{{ n }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  {% if q or selected_status or selected_location %}
+  <a href="{{ clear_url }}">Clear filters</a>
   {% endif %}
 </form>
+
+<p class="summary">
+  {% if total %}Showing {{ first_shown }}&ndash;{{ last_shown }} of {{ total }} item{{ '' if total == 1 else 's' }}{% else %}No matching items{% endif %}{% if q %} matching &ldquo;{{ q }}&rdquo;{% endif %}
+</p>
+{{ pager() }}
 
 <datalist id="locations-datalist">
   {% for loc in locations %}
@@ -50,7 +80,7 @@
   </thead>
   <tbody>
     {% for item in items %}
-    <tr {% if request.query_params.get('highlight') == item['item_id'] %}class="highlight"{% endif %}>
+    <tr {% if highlight == item['item_id'] %}class="highlight"{% endif %}>
       <td>{{ item['item_id'] }}</td>
       <td>{{ item['name'] }}</td>
       <td>{{ item['category'] or '' }}</td>
@@ -58,6 +88,9 @@
         <form class="inline" method="post" action="/items/{{ item['item_id'] }}/quick-update">
           <input type="hidden" name="return_status" value="{{ selected_status }}">
           <input type="hidden" name="return_location" value="{{ selected_location }}">
+          <input type="hidden" name="return_q" value="{{ q }}">
+          <input type="hidden" name="return_page" value="{{ page }}">
+          <input type="hidden" name="return_per_page" value="{{ per_page }}">
           <input class="quick" type="text" name="storage_location" list="locations-datalist"
                  value="{{ item['storage_location'] or '' }}" onchange="this.form.submit()" size="12">
         </form>
@@ -66,6 +99,9 @@
         <form class="inline" method="post" action="/items/{{ item['item_id'] }}/quick-update">
           <input type="hidden" name="return_status" value="{{ selected_status }}">
           <input type="hidden" name="return_location" value="{{ selected_location }}">
+          <input type="hidden" name="return_q" value="{{ q }}">
+          <input type="hidden" name="return_page" value="{{ page }}">
+          <input type="hidden" name="return_per_page" value="{{ per_page }}">
           <select class="quick" name="availability_status" onchange="this.form.submit()">
             {% for s in statuses %}
             <option value="{{ s }}" {% if s == item['availability_status'] %}selected{% endif %}>{{ s }}</option>
@@ -89,4 +125,5 @@
     {% endfor %}
   </tbody>
 </table>
+{{ pager() }}
 {% endblock %}

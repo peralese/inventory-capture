@@ -43,7 +43,9 @@ Then run the startup command above. Dependency versions are currently unpinned i
 
 - Add and edit inventory items. New items receive sequential IDs such as `0001`.
 - Track quantity on hand (all unsold copies, including listed copies), quantity currently listed, and total quantity sold. Edit counts manually as copies are listed or sold; listed cannot exceed on hand. Status and the Listed checkbox remain independent summary fields.
+- Search by item ID, name, category, storage location, or notes. Every word must match somewhere, so `blue vase` finds "Vase, cobalt blue". Search combines with the status and location filters.
 - Filter inventory by availability status and storage location.
+- Browse 50 items per page by default (25 or 100 available). After you save an item, the list opens on the page containing it. Quick status/location edits keep your current search and page.
 - Update status and location directly from the inventory list.
 - Record category, condition, notes, and whether a photo is on file.
 - Record acquisition, listing, and sale details, including costs, prices, fees, and net profit.
@@ -84,6 +86,16 @@ Existing item IDs are preserved, with numeric IDs padded to at least four digits
 
 `--dry-run` previews rows without inserting them, but still initializes the database and applies any missing schema columns.
 
+## Run the tests
+
+From the project directory:
+
+```sh
+.venv/bin/python -m unittest discover -s tests
+```
+
+Tests use a temporary database and do not touch `inventory.db`.
+
 ## Project files
 
 | Path | Purpose |
@@ -92,6 +104,7 @@ Existing item IDs are preserved, with numeric IDs padded to at least four digits
 | `app/db.py` | SQLite schema and inventory queries |
 | `app/templates/` | HTML pages |
 | `import_data.py` | Spreadsheet import command |
+| `tests/` | Automated tests for quantities, search, and paging |
 | `requirements.txt` | Python dependencies |
 | `inventory.db` | Live inventory data |
 | `antiques_inventory.xlsx` | Existing spreadsheet import source |
