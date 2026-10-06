@@ -11,6 +11,7 @@ __pycache__/
 *.db-shm
 /antiques_inventory.xlsx
 /import/
+/exports/
 
 # Local settings and secrets
 .env
